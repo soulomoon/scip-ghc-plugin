@@ -51,13 +51,21 @@ extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
 
 common warnings
-    ghc-options: -Wall
+    ghc-options: -w
 
 library MyPlugin
     import:           warnings
-    exposed-modules:  MyPlugin
+    exposed-modules:  MyPlugin, Ext.Ast, Ext.Binary, Ext.Debug, Ext.Fields, Ext.Types, Ext.Utils
     build-depends:    base ^>=4.20.0.0
                     , ghc
+                    , transformers
+                    , containers
+                    , bytestring
+                    , array
+                    , deepseq
+                    , ghc-boot
+                    , filepath
+                    , directory
     hs-source-dirs:   plugin
     default-language: Haskell2010
 library MyLib
