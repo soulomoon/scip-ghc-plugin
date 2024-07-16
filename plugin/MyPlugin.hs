@@ -43,4 +43,5 @@ typechecked _ ms env = do
     hf <- mkHieFile ms env (renamed, ex, ix, lhrn, xrec)
     liftIO $ putStrLn $ showSDocUnsafe $ ppr (renamed, ex, ix, lhrn, xrec)
     liftIO $ putStrLn $ showSDocUnsafe $ ppr (hie_asts hf)
+    liftIO $ putStrLn $ showSDocUnsafe $ ppr (hie_entity_infos hf)
     return env
