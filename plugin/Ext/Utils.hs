@@ -44,6 +44,9 @@ import GHC.Utils.Monad.State.Strict hiding (get)
 import GHC.Utils.Panic.Plain( assert )
 import Control.Monad.Trans.Reader
 import qualified Data.Tree as Tree
+import qualified Data.Map as Map
+import Control.Arrow (first)
+import Data.Bifunctor (second)
 
 type RefMap a = M.Map Identifier [(Span, IdentifierDetails a)]
 
@@ -107,13 +110,7 @@ data EvidenceInfo a
   , evidenceSpan :: RealSrcSpan
   , evidenceType :: a
   , evidenceDetails :: Maybe (EvVarSource, Scope, Maybe Span)
-  } deriving (Eq, Functor)
-
-instance Ord a => Ord (EvidenceInfo a) where
-  compare (EvidenceInfo name span typ dets) (EvidenceInfo name' span' typ' dets') =
-    case stableNameCmp name name' of
-      EQ -> compare (span, typ, dets) (span', typ', dets')
-      r -> r
+  } deriving (Eq,Ord,Functor)
 
 instance (Outputable a) => Outputable (EvidenceInfo a) where
   ppr (EvidenceInfo name span typ dets) =
@@ -533,14 +530,21 @@ locOnly (RealSrcSpan span _) = do
   pure [Node e span []]
 locOnly _ = pure []
 
-locOnlyE :: Monad m => EpaLocation -> ReaderT NodeOrigin m [HieAST a]
-locOnlyE (EpaSpan s) = locOnly s
-locOnlyE _ = pure []
+mkScopeA :: SrcSpanAnn' ann -> Scope
+mkScopeA l = mkScope (locA l)
 
-mkScope :: (HasLoc a) => a -> Scope
-mkScope a = case getHasLoc a of
-              (RealSrcSpan sp _) -> LocalScope sp
-              _ -> NoScope
+mkScope :: SrcSpan -> Scope
+mkScope (RealSrcSpan sp _) = LocalScope sp
+mkScope _ = NoScope
+
+mkLScope :: Located a -> Scope
+mkLScope = mkScope . getLoc
+
+mkLScopeA :: GenLocated (SrcSpanAnn' a) e -> Scope
+mkLScopeA = mkScope . locA . getLoc
+
+mkLScopeN :: LocatedN a -> Scope
+mkLScopeN = mkScope . getLocA
 
 combineScopes :: Scope -> Scope -> Scope
 combineScopes ModuleScope _ = ModuleScope
@@ -556,8 +560,8 @@ mkSourcedNodeInfo org ni = SourcedNodeInfo $ M.singleton org ni
 {-# INLINEABLE makeNodeA #-}
 makeNodeA
   :: (Monad m, Data a)
-  => a                 -- ^ helps fill in 'nodeAnnotations' (with 'Data')
-  -> EpAnn ann         -- ^ return an empty list if this is unhelpful
+  => a                       -- ^ helps fill in 'nodeAnnotations' (with 'Data')
+  -> SrcSpanAnn' ann         -- ^ return an empty list if this is unhelpful
   -> ReaderT NodeOrigin m [HieAST b]
 makeNodeA x spn = makeNode x (locA spn)
 
@@ -601,3 +605,39 @@ makeTypeNode x spn etyp = do
   where
     cons = mkFastString . show . toConstr $ x
     typ = mkFastString . show . typeRepTyCon . typeOf $ x
+
+
+
+getNodeIds :: HieAST a -> Map.Map Identifier (IdentifierDetails a)
+getNodeIds = Map.unions . map getSourceNodeIds . flattenAst
+  where
+    -- | Like getNodeIds but with generated node removed
+    getSourceNodeIds :: HieAST a -> Map.Map Identifier (IdentifierDetails a)
+    getSourceNodeIds = Map.foldl' combineNodeIds Map.empty . M.filterWithKey (const . (==SourceInfo)) . getSourcedNodeInfo . sourcedNodeInfo
+
+    getNodeIds' :: HieAST a -> Map.Map Identifier (IdentifierDetails a)
+    getNodeIds' = Map.foldl' combineNodeIds Map.empty . getSourcedNodeInfo . sourcedNodeInfo
+
+combineNodeIds :: Map.Map Identifier (IdentifierDetails a)
+                        -> NodeInfo a -> Map.Map Identifier (IdentifierDetails a)
+ad `combineNodeIds` (NodeInfo _ _ bd) = Map.unionWith (<>) ad bd
+
+--  Copied from GHC and adjusted to accept TypeIndex instead of Type
+-- nodeInfo' :: Ord a => HieAST a -> NodeInfo a
+nodeInfo' :: HieAST TypeIndex -> NodeInfo TypeIndex
+nodeInfo' = Map.foldl' combineNodeInfo' emptyNodeInfo . getSourcedNodeInfo . sourcedNodeInfo
+
+combineNodeInfo' :: Ord a => NodeInfo a -> NodeInfo a -> NodeInfo a
+(NodeInfo as ai ad) `combineNodeInfo'` (NodeInfo bs bi bd) =
+  NodeInfo (S.union as bs) (mergeSorted ai bi) (Map.unionWith (<>) ad bd)
+  where
+    mergeSorted :: Ord a => [a] -> [a] -> [a]
+    mergeSorted la@(a:axs) lb@(b:bxs) = case compare a b of
+                                        LT -> a : mergeSorted axs lb
+                                        EQ -> a : mergeSorted axs bxs
+                                        GT -> b : mergeSorted la bxs
+    mergeSorted axs [] = axs
+    mergeSorted [] bxs = bxs
+
+detailType :: IdentifierDetails a -> Maybe a
+detailType = identType

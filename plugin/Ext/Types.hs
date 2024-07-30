@@ -29,13 +29,6 @@ import GHC.Types.Avail
 import GHC.Types.Unique
 import qualified GHC.Utils.Outputable as O ( (<>) )
 import GHC.Utils.Panic
-import GHC.Core.ConLike           ( ConLike(..) )
-import GHC.Core.TyCo.Rep          ( Type(..) )
-import GHC.Core.Type              ( coreFullView, isFunTy, Var (..) )
-import GHC.Core.TyCon             ( isTypeSynonymTyCon, isClassTyCon, isFamilyTyCon )
-import GHC.Types.Id               ( Id, isRecordSelector, isClassOpId )
-import GHC.Types.TyThing          ( TyThing (..) )
-import GHC.Types.Var              ( isTyVar, isFUNArg )
 
 import qualified Data.Array as A
 import qualified Data.Map as M
@@ -48,6 +41,13 @@ import Control.Applicative        ( (<|>) )
 import Data.Coerce                ( coerce  )
 import Data.Function              ( on )
 import qualified Data.Semigroup as S
+import GHC.Types.Id (Id, isRecordSelector, isClassOpId)
+import GHC.Core.TyCo.Rep (Type(..))
+import GHC.Types.TyThing (TyThing (..))
+import GHC.Core.ConLike (ConLike(..))
+import GHC.Types.Var (isTyVar, Var (..), isFUNArg)
+import GHC.Core.Type (coreFullView, isFunTy)
+import GHC.Core.TyCon (isTypeSynonymTyCon, isFamilyTyCon, isClassTyCon)
 
 type Span = RealSrcSpan
 
@@ -93,15 +93,12 @@ data HieFile = HieFile
     -- ^ Raw bytes of the initial Haskell source
 
     , hie_entity_infos :: NameEntityInfo
-    -- ^ Entity information for each `Name` in the `hie_asts`
     }
-
 type NameEntityInfo = M.Map Name (S.Set EntityInfo)
 
 instance Binary NameEntityInfo where
   put_ bh m = put_ bh $ M.toList m
   get bh = fmap M.fromList (get bh)
-
 instance Binary HieFile where
   put_ bh hf = do
     put_ bh $ hie_hs_file hf
@@ -804,22 +801,6 @@ toHieName name
   | otherwise = LocalName (nameOccName name) (removeBufSpan $ nameSrcSpan name)
 
 
-{- Note [Capture Entity Information]
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We need to capture the entity information for the identifier in HieAst, so that
-language tools and protocols can take advantage making use of it.
-
-Capture `EntityInfo` for a `Name` or `Id` in `renamedSource` or `typecheckedSource`
-if it is a name, we ask the env for the `TyThing` then compute the `EntityInfo` from tyThing
-if it is an Id, we compute the `EntityInfo` directly from Id
-
-see issue #24544 for more details
--}
-
-
--- | Entity information
--- `EntityInfo` is a simplified version of `TyThing` and richer version than `Namespace` in `OccName`.
--- It state the kind of the entity, such as `Variable`, `TypeVariable`, `DataConstructor`, etc..
 data EntityInfo
   = EntityVariable
   | EntityFunction

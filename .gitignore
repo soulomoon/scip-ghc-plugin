@@ -58,5 +58,6 @@ Temporary Items
 ### macOS Patch ###
 # iCloud generated files
 *.icloud
+.vscode/
 
 # End of https://www.toptal.com/developers/gitignore/api/haskell,macos

@@ -1,7 +1,8 @@
-{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 {-
 Binary serialization for .hie files.
 -}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Ext.Binary
    ( readHieFile
