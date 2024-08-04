@@ -149,7 +149,7 @@ typechecked _ ms env = do
     let docs = hieFileScip dy kindMap unit_state hf
     forM_ docs $ \doc -> do
         let encoded = encodeMessage doc
-            path = "data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath)
+            path = "./data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath)
         -- -- create a file
         liftIO $ BS.createDirectoryIfMissing True $ takeDirectory path
         liftIO $ BS.writeFile path encoded
