@@ -1,0 +1,73 @@
+cabal-version:      3.0
+name:               scip-ghc-plugin
+
+-- The package version.
+-- See the Haskell package versioning policy (PVP) for standards
+-- guiding when and how versions should be incremented.
+-- https://pvp.haskell.org
+-- PVP summary:     +-+------- breaking API changes
+--                  | | +----- non-breaking API additions
+--                  | | | +--- code changes with no API change
+version:            0.1.0.0
+-- A short (one-line) description of the package.
+synopsis:          A GHC plugin that generate SCIP.
+-- A longer description of the package.
+description:       This package is a GHC plugin, it modify the Ext.Ast module to
+                   generate SCIP code.
+-- The license under which the package is released.
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             soulomoon
+maintainer:         fwy996602672@gmail.com
+-- A copyright notice.
+copyright:          2024 soulomoon
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+common warnings
+    ghc-options:  -Wall
+
+library SCIPGHCPlugin
+    import:           warnings
+    exposed-modules:  SCIPGHCPlugin
+                    , Ext.Ast, Ext.Binary, Ext.Debug, Ext.Fields, Ext.Types, Ext.Utils
+                    , Proto.Scip, Proto.Scip_Fields, EntityInfoKind
+    build-depends:    base
+                    , ghc
+                    , transformers
+                    , containers
+                    , bytestring
+                    , array
+                    , deepseq
+                    , ghc-boot
+                    , filepath
+                    , directory
+                    , proto-lens-runtime
+                    , proto-lens
+                    , deepseq
+                    , text
+                    , lens-family
+                    , vector
+                    , bytestring
+    hs-source-dirs:   plugin
+    default-language: Haskell2010
+
+-- library MyLib
+--     import:           warnings
+--     exposed-modules:  MyLib
+--     other-modules:   ModuleA
+--     build-depends:    base
+--                     , MyPlugin
+--                     , text
+--     ghc-options:    -fplugin=MyPlugin
+--                     -Werror
+--     hs-source-dirs:   src
+--     default-language: Haskell2010
+
+test-suite SCIPGHCPlugin-test
+    import:           warnings
+    default-language: Haskell2010
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base
