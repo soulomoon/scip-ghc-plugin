@@ -1,0 +1,13 @@
+# scip-ghc-plugin
+
+A ghc plugin that modify the Ext.Ast module to generate SCIP code.
+
+## usage
+Usage is simple, just add the following to your cabal file:
+
+```
+build-depends:  scip-ghc-plugin
+ghc-options:    -fplugin=scip-ghc-plugin
+```
+
+
