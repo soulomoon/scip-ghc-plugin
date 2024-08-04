@@ -9,6 +9,8 @@ go = 1 + 1
 toString :: Int -> String
 toString = show
 
+toMaybe :: Maybe Int -> Int
+toMaybe (Just 1) = 1
 
 md :: MyData
 md = MyData 1 (T.pack "hello")

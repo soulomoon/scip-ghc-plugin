@@ -2,9 +2,7 @@
 
 module EntityInfoKind where
 import Ext.Types (EntityInfo (..))
-import qualified Data.Text as T
 import Proto.Scip (SymbolInformation'Kind(..))
-import qualified Data.List.NonEmpty as Ne
 import qualified Data.Set as S
 
 

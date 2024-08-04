@@ -1,0 +1,7 @@
+Build profile: -w ghc-9.8.2 -O1
+In order, the following will be built (use -v for more details):
+ - ghcplugin-0.1.0.0 (lib:MyPlugin) (file plugin/MyPlugin.hs changed)
+ - ghcplugin-0.1.0.0 (lib:MyLib) (dependency rebuilt)
+Preprocessing library 'MyPlugin' for ghcplugin-0.1.0.0...
+Building library 'MyPlugin' for ghcplugin-0.1.0.0...
+[10 of 10] Compiling MyPlugin         ( plugin/MyPlugin.hs, /Volumes/src/ghcplugin/dist-newstyle/build/aarch64-osx/ghc-9.8.2/ghcplugin-0.1.0.0/l/MyPlugin/build/MyPlugin/MyPlugin.o, /Volumes/src/ghcplugin/dist-newstyle/build/aarch64-osx/ghc-9.8.2/ghcplugin-0.1.0.0/l/MyPlugin/build/MyPlugin/MyPlugin.dyn_o ) [Source file changed]
