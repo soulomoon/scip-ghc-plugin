@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module SCIPGHCPlugin (plugin) where
+module ScipGhcPlugin (plugin) where
 
 import GHC.Plugins hiding ((<>))
 import GHC.Tc.Types
