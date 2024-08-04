@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module EntityInfoKind where
 import Ext.Types (EntityInfo (..))
 import Proto.Scip (SymbolInformation'Kind(..))
