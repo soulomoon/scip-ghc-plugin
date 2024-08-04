@@ -1,6 +1,6 @@
 # scip-ghc-plugin
 
-A ghc plugin that modify the Ext.Ast module to generate SCIP code.
+A ghc plugin that modify the Ext.Ast module to generate SCIP file.
 
 ## usage
 
