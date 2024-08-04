@@ -25,7 +25,7 @@ import EntityInfoKind (entityInfosKind)
 import Control.Arrow (Arrow (..))
 import Data.Functor.Identity (Identity(..))
 import Data.ProtoLens.Encoding (encodeMessage)
-import System.FilePath ((</>), takeDirectory)
+import System.FilePath ((</>), takeDirectory, (<.>))
 import qualified Data.ByteString as BS
 import Control.Monad (forM_)
 import qualified System.Directory as BS
@@ -149,7 +149,7 @@ typechecked _ ms env = do
     let docs = hieFileScip dy kindMap unit_state hf
     forM_ docs $ \doc -> do
         let encoded = encodeMessage doc
-            path = ".data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath)
+            path = ".data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath) <.> "proto"
         -- -- create a file
         liftIO $ BS.createDirectoryIfMissing True $ takeDirectory path
         liftIO $ BS.writeFile path encoded

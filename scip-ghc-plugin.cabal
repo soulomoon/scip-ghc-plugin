@@ -51,17 +51,17 @@ library
     hs-source-dirs:   plugin
     default-language: Haskell2010
 
--- library TestSrc
---     import:           warnings
---     exposed-modules:  MyLib
---     other-modules:   ModuleA
---     build-depends:    base
---                     , scip-ghc-plugin
---                     , text
---     ghc-options:    -fplugin=scip-ghc-plugin
---                     -Werror
---     hs-source-dirs:   testsrc
---     default-language: Haskell2010
+library TestSrc
+    import:           warnings
+    exposed-modules:  MyLib
+    other-modules:   ModuleA
+    build-depends:    base
+                    , scip-ghc-plugin
+                    , text
+    ghc-options:    -fplugin=ScipGhcPlugin
+                    -Werror
+    hs-source-dirs:   testsrc
+    default-language: Haskell2010
 
 test-suite scip-ghc-plugin-test
     import:           warnings
