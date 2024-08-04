@@ -28,7 +28,7 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  SCIPGHCPlugin
+    exposed-modules:  ScipGhcPlugin
                     , Ext.Ast, Ext.Binary, Ext.Debug, Ext.Fields, Ext.Types, Ext.Utils
                     , Proto.Scip, Proto.Scip_Fields, EntityInfoKind
     build-depends:    base
