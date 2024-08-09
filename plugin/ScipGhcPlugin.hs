@@ -39,10 +39,10 @@ import qualified Data.ByteString.Char8 as BC
 -- This is the entry point for the plugin
 plugin :: Plugin
 plugin = defaultPlugin {
-    driverPlugin = myDriverPlugin,
+    -- driverPlugin = myDriverPlugin,
     typeCheckResultAction = typechecked,
-    renamedResultAction = renamedResult,
-    parsedResultAction = myParsedResultAction
+    renamedResultAction = renamedResult
+    -- parsedResultAction = myParsedResultAction
 }
 -- create file
 createNewFile :: FilePath -> BS.ByteString -> IO ()

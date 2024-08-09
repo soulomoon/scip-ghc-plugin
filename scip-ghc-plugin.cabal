@@ -59,7 +59,7 @@ library TestSrc
                     , scip-ghc-plugin
                     , text
     ghc-options:    -fplugin=ScipGhcPlugin
-                    -Werror
+                    -- -Werror
     hs-source-dirs:   testsrc
     default-language: Haskell2010
 
