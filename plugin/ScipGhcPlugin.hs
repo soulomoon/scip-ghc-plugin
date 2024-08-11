@@ -6,9 +6,7 @@ module ScipGhcPlugin (plugin) where
 import GHC.Plugins hiding ((<>))
 import GHC.Tc.Types
 import GHC.Hs
-import Ext.Ast
-import Ext.Types
-import Proto.Scip (Document, PositionEncoding (UTF32CodeUnitOffsetFromLineStart), Occurrence, Symbol, Package, SymbolInformation, Descriptor, Diagnostic)
+import Proto.Scip (Document, PositionEncoding (UTF32CodeUnitOffsetFromLineStart), Occurrence, Symbol, Package, SymbolInformation, Descriptor, Diagnostic, SymbolInformation'Kind (..))
 import qualified Proto.Scip_Fields
 import Data.ProtoLens (Message(..))
 import Lens.Family2 ((&), (.~), (^.))
@@ -20,7 +18,6 @@ import Data.Version (showVersion)
 import GHC.Tc.Utils.Monad (getTopEnv)
 import GHC.Unit.Env (ue_units)
 import qualified Data.Map.Strict as Map
-import Ext.Utils (getNodeIds, recoverFullType, renderHieType, generateReferencesMap, RefMap)
 import EntityInfoKind (entityInfosKind)
 import Control.Arrow (Arrow (..))
 import Data.Functor.Identity (Identity(..))
@@ -35,6 +32,9 @@ import GHC.Utils.Error (MessageClass (..))
 import qualified GHC.Types.Error as GHC
 import qualified Proto.Scip as SCIP
 import qualified Data.ByteString.Char8 as BC
+import Ext.Ast
+import Ext.Types
+import Ext.Utils (getNodeIds, recoverFullType, renderHieType, generateReferencesMap, RefMap)
 
 -- This is the entry point for the plugin
 plugin :: Plugin
@@ -145,11 +145,14 @@ typechecked _ ms env = do
         h = tcg_doc_hdr env
         dy = hsc_dflags hscEnv
     hf <- mkHieFile ms env (renamed, ex, ix, h)
+    -- write to hie file
     let kindMap = hie_entity_infos hf
     let docs = hieFileScip dy kindMap unit_state hf
     forM_ docs $ \doc -> do
         let encoded = encodeMessage doc
             path = ".data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath) <.> "proto"
+            -- hiePath = ".data" </> T.unpack (doc ^. Proto.Scip_Fields.relativePath) <.> "hie"
+        -- liftIO $ writeHieFile path hf
         -- -- create a file
         liftIO $ BS.createDirectoryIfMissing True $ takeDirectory path
         liftIO $ BS.writeFile path encoded
@@ -179,7 +182,7 @@ mkScip :: DynFlags -> NameEntityInfo -> UnitState -> HieFile -> HiePath -> HieAS
 mkScip dy ni uns hf (HiePath path) hs = defMessage
     & Proto.Scip_Fields.language .~ "Haskell"
     & Proto.Scip_Fields.relativePath .~ fastStringToText path
-    & Proto.Scip_Fields.occurrences .~ concatMap (mapOccurrences refs . fst) names
+    & Proto.Scip_Fields.occurrences .~ concatMap (mapOccurrences . fst) names
     & Proto.Scip_Fields.symbols .~ symbols
     & Proto.Scip_Fields.positionEncoding .~ UTF32CodeUnitOffsetFromLineStart
     where
@@ -190,10 +193,10 @@ mkScip dy ni uns hf (HiePath path) hs = defMessage
         symbols = map (nameToSymbolInfo ni uns curPa ) names
         curPa = fromMaybe (defMessage & Proto.Scip_Fields.name .~ fastStringToText path) (packageNameWithVersion uns (hie_module hf))
 
-        mapOccurrences ::  RefMap TypeIndex -> Identifier -> [Proto.Scip.Occurrence]
-        mapOccurrences _refs (Left _) = []
-        mapOccurrences _refs iden@(Right name) = toOcc <$> spansOcc
-            where spansOcc = fst <$> refs Map.! iden
+        mapOccurrences ::  Identifier -> [Proto.Scip.Occurrence]
+        mapOccurrences (Left _) = []
+        mapOccurrences iden@(Right name) = maybe [] (fmap toOcc) spansOcc
+            where spansOcc = fmap fst <$> refs Map.!? iden
                   toOcc :: Span -> Proto.Scip.Occurrence
                   toOcc spanOcc = defMessage
                     & Proto.Scip_Fields.range .~ spanRange spanOcc
@@ -206,7 +209,7 @@ nameToSymbolInfo :: NameEntityInfo -> UnitState -> Package -> (Identifier, Maybe
 nameToSymbolInfo _ni _uns _pa (Left _, _ty) = defMessage
 nameToSymbolInfo ni uns pa (Right name, ty) = defMessage
     & Proto.Scip_Fields.symbol .~ T.pack (show (nameToSymbol uns pa name))
-    & Proto.Scip_Fields.kind .~ entityInfosKind (ni Map.! name)
+    & Proto.Scip_Fields.kind .~ maybe SymbolInformation'UnspecifiedKind entityInfosKind (ni Map.!? name)
     & Proto.Scip_Fields.displayName .~ T.pack (occNameString $ occName name)
     & Proto.Scip_Fields.signatureDocumentation .~ sigDoc ty
     where
@@ -229,7 +232,7 @@ namePackage :: UnitState -> Name -> Maybe Package
 namePackage uns name =
     case nameSrcLoc name of
         UnhelpfulLoc {} | isInternalName name || isSystemName name -> Nothing
-        _ -> packageNameWithVersion uns (nameModule name)
+        _ -> packageNameWithVersion uns =<< nameModule_maybe name
 
 packageNameWithVersion :: UnitState -> Module -> Maybe Package
 packageNameWithVersion env  m = do

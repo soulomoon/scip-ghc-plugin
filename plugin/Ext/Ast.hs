@@ -21,7 +21,7 @@ Main functions for .hie file generation
 
 module Ext.Ast ( mkHieFile, mkHieFileWithSource, getCompressedAsts, enrichHie) where
 
-import GHC.Utils.Outputable(ppr)
+import GHC.Utils.Outputable(ppr, showSDocUnsafe)
 
 import GHC.Prelude hiding ( head, init, last, tail )
 
@@ -436,6 +436,14 @@ bindingsOnly [] = pure []
 bindingsOnly (C c n : xs) = do
   org <- ask
   rest <- bindingsOnly xs
+  let name' = n
+  m <- lift $ gets name_remapping
+  let name = maybe name' varName (lookupNameEnv m name')
+  tyThing <- hieLookupTyThing name
+  tyThing' <- hieLookupTyThing name'
+  -- insert the entity info for the name into the entity_infos map
+  insertEntityInfo name $ maybe (nameEntityInfo name) tyThingEntityInfo tyThing
+  insertEntityInfo name' $ maybe (nameEntityInfo name') tyThingEntityInfo tyThing'
   pure $ case nameSrcSpan n of
     RealSrcSpan span _ -> Node (mkSourcedNodeInfo org nodeinfo) span [] : rest
       where nodeinfo = NodeInfo S.empty [] (M.singleton (Right n) info)
@@ -896,9 +904,9 @@ instance HiePass p => ToHie (BindContext (LocatedA (HsBind (GhcPass p)))) where
         [ toHie expr
         ]
       XHsBindsLR ext -> case hiePass @p of
-#if __GLASGOW_HASKELL__ < 811
-        HieRn -> dataConCantHappen ext
-#endif
+
+
+
         HieTc
           | AbsBinds{ abs_exports = xs, abs_binds = binds
                     , abs_ev_binds = ev_binds
